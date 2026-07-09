@@ -1,0 +1,34 @@
+{
+  "Project Defaults": {
+    "cash_max": 0.2,
+    "cash_min": null,
+    "developed_max": null,
+    "developed_min": null,
+    "emerging_max": null,
+    "emerging_min": null,
+    "equity_max": 0.8,
+    "equity_min": 0.6,
+    "fixed_income_max": 0.4,
+    "fixed_income_min": 0.2,
+    "foreign_equity_max_pct_of_equity": 0.5,
+    "individual_max": null,
+    "individual_min": null,
+    "no_short": true
+  },
+  "Unconstrained Long Only": {
+    "cash_max": null,
+    "cash_min": null,
+    "developed_max": null,
+    "developed_min": null,
+    "emerging_max": null,
+    "emerging_min": null,
+    "equity_max": null,
+    "equity_min": null,
+    "fixed_income_max": null,
+    "fixed_income_min": null,
+    "foreign_equity_max_pct_of_equity": null,
+    "individual_max": null,
+    "individual_min": null,
+    "no_short": true
+  }
+}
