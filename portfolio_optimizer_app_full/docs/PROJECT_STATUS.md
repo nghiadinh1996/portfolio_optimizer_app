@@ -1,8 +1,10 @@
 # Project Status
 
-## Version 1.0 completed features
+## Version 1.1 completed features
 
 - Standardized `data.xlsx` input workbook
+- Streamlit file upload mode for user-provided `.xlsx` workbooks
+- Downloadable Excel template from the app sidebar
 - Dynamic asset count and timeframe support
 - Price/index level input with automatic monthly return calculation
 - Demeaned return calculation

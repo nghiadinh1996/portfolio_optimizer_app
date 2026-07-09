@@ -35,6 +35,7 @@ st.set_page_config(page_title="Portfolio Optimizer", layout="wide")
 
 APP_DIR = Path(__file__).resolve().parent
 DATA_FILE = APP_DIR / "data.xlsx"
+SAMPLE_FILE = APP_DIR / "sample_data.xlsx"
 PRESET_FILE = APP_DIR / "presets.json"
 
 
@@ -156,24 +157,75 @@ def run_optimizer_workflow(
 
 
 st.title("Portfolio Optimizer")
-st.caption("Version 1.0: polished dashboard, report export, constraint presets, packaging, documentation and deployment guide")
+st.caption("Version 1.1: file upload mode, template download, polished dashboard, report export and constraint presets")
+
+# Sidebar: data source
+st.sidebar.header("0. Data Source")
+template_path = SAMPLE_FILE if SAMPLE_FILE.exists() else DATA_FILE
+if template_path.exists():
+    with open(template_path, "rb") as template_file:
+        st.sidebar.download_button(
+            "Download Excel template",
+            data=template_file,
+            file_name="portfolio_optimizer_template.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            help="Download this template, replace the price data and asset classifications, then upload it back into the app.",
+        )
+else:
+    st.sidebar.warning("No template workbook was found in the app folder.")
+
+data_source_choice = st.sidebar.radio(
+    "Choose input data",
+    ["Use included sample data", "Upload my own Excel file"],
+    index=0,
+)
+
+uploaded_file = None
+if data_source_choice == "Upload my own Excel file":
+    uploaded_file = st.sidebar.file_uploader(
+        "Upload completed Excel workbook",
+        type=["xlsx"],
+        help="The workbook must include prices, asset_info and expected_returns sheets.",
+    )
+    if uploaded_file is None:
+        st.info("Download the Excel template from the sidebar, fill it in, then upload the completed .xlsx file to run your own data.")
+        with st.expander("Expected workbook structure", expanded=True):
+            st.markdown(
+                """
+                Required sheets:
+                - `prices`: `Date` plus one column per asset with price/index levels
+                - `asset_info`: `Asset`, `Asset Class`, `Region`, `Subgroup`
+                - `expected_returns`: `Asset`, `Expected Annual Return`
+                - `classification_guide`: optional reference sheet explaining the classification fields
+
+                Asset names must match exactly across `prices`, `asset_info`, and `expected_returns`.
+                Expected returns should be entered as Excel percentages, such as `8.97%`, or as decimals, such as `0.0897`.
+                """
+            )
+        st.stop()
+    workbook_source = uploaded_file
+    workbook_name = uploaded_file.name
+else:
+    workbook_source = DATA_FILE if DATA_FILE.exists() else SAMPLE_FILE
+    workbook_name = Path(workbook_source).name
 
 try:
-    data = load_portfolio_workbook(DATA_FILE)
+    data = load_portfolio_workbook(workbook_source)
 except Exception as exc:
-    st.error(f"Could not load {DATA_FILE.name}")
+    st.error(f"Could not load workbook: {workbook_name}")
     st.write(str(exc))
     with st.expander("Expected workbook structure"):
         st.markdown(
             """
-            The app expects `data.xlsx` in the same folder as `app.py`.
-
             Required sheets:
             - `prices`: `Date` plus one column per asset with price/index levels
             - `asset_info`: `Asset`, `Asset Class`, `Region`, `Subgroup`
             - `expected_returns`: `Asset`, `Expected Annual Return`
+            - `classification_guide`: optional reference sheet explaining the classification fields
 
+            Asset names must match exactly across `prices`, `asset_info`, and `expected_returns`.
             Expected returns should be entered as Excel percentages, such as `8.97%`, or as decimals, such as `0.0897`.
+            Do not enter `8.97`, because Python reads that as 897%.
             """
         )
     st.stop()
@@ -289,6 +341,7 @@ run_button = st.sidebar.button("Run optimization", type="primary")
 # Pre-run dashboard
 summary_tab, assumptions_tab, diagnostics_tab = st.tabs(["Data Preview", "Assumptions & Constraints", "Diagnostics"])
 with summary_tab:
+    st.caption(f"Input workbook: `{workbook_name}`")
     c1, c2, c3, c4, c5, c6 = st.columns(6)
     c1.metric("Assets", len(data.assets))
     c2.metric("Price Rows", len(data.prices))

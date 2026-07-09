@@ -21,13 +21,19 @@ py -m pip install -r requirements.txt
 py -m streamlit run app.py
 ```
 
-## The app cannot load `data.xlsx`
+## The app cannot load the workbook
 
-Check that:
+If you are using the included sample data, check that:
 
-- The file is named exactly `data.xlsx`
-- It is in the same folder as `app.py`
+- `data.xlsx` or `sample_data.xlsx` is in the same folder as `app.py`
 - It has the required sheets: `prices`, `asset_info`, `expected_returns`
+
+If you are uploading your own file, check that:
+
+- The file is an `.xlsx` workbook
+- It was not left open and locked by Excel during upload
+- It has the required sheets: `prices`, `asset_info`, `expected_returns`
+- Asset names match exactly across `prices`, `asset_info`, and `expected_returns`
 
 ## Expected returns are too high
 

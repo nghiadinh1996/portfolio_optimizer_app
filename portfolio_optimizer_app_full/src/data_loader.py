@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Any
 
 import pandas as pd
 
@@ -65,24 +65,32 @@ def _validate_expected_return_scale(expected: pd.DataFrame) -> None:
         )
 
 
-def load_portfolio_workbook(path: str | Path) -> PortfolioInputData:
+def load_portfolio_workbook(source: str | Path | Any) -> PortfolioInputData:
     """Load and validate the standardized portfolio optimizer workbook.
+
+    The source can be either a local file path, such as ``data.xlsx``, or a
+    Streamlit uploaded file object from ``st.file_uploader``.
 
     Expected workbook structure:
       - prices: Date column + one column per asset with price/index levels
       - asset_info: Asset, Asset Class, Region, Subgroup
       - expected_returns: Asset, Expected Annual Return
     """
-    path = Path(path)
-    if not path.exists():
-        raise FileNotFoundError(
-            f"Input file not found: {path}. Put data.xlsx in the same folder as app.py."
-        )
+    workbook_name = getattr(source, "name", None) or str(source)
+    if isinstance(source, (str, Path)):
+        source = Path(source)
+        workbook_name = source.name
+        if not source.exists():
+            raise FileNotFoundError(
+                f"Input file not found: {source}. Upload a completed workbook or include data.xlsx in the app folder."
+            )
 
     try:
-        xl = pd.ExcelFile(path)
+        if hasattr(source, "seek"):
+            source.seek(0)
+        xl = pd.ExcelFile(source)
     except Exception as exc:
-        raise ValueError(f"Could not open workbook '{path.name}'. Make sure it is a valid .xlsx file. Detail: {exc}") from exc
+        raise ValueError(f"Could not open workbook '{workbook_name}'. Make sure it is a valid .xlsx file. Detail: {exc}") from exc
 
     missing_sheets = REQUIRED_SHEETS - set(xl.sheet_names)
     if missing_sheets:
@@ -91,9 +99,9 @@ def load_portfolio_workbook(path: str | Path) -> PortfolioInputData:
             "The workbook must include prices, asset_info, and expected_returns."
         )
 
-    prices = pd.read_excel(path, sheet_name="prices")
-    asset_info = pd.read_excel(path, sheet_name="asset_info")
-    expected = pd.read_excel(path, sheet_name="expected_returns")
+    prices = xl.parse(sheet_name="prices")
+    asset_info = xl.parse(sheet_name="asset_info")
+    expected = xl.parse(sheet_name="expected_returns")
 
     warnings: list[str] = []
 

@@ -1,8 +1,10 @@
 # User Guide
 
-## 1. Prepare `data.xlsx`
+## 1. Prepare the input workbook
 
-Keep the workbook in the same folder as `app.py`. The workbook must contain:
+You can either use the included sample data or upload your own workbook. For a shared Streamlit link, click **Download Excel template** in the sidebar, fill in the workbook, then upload it back into the app.
+
+The workbook must contain:
 
 - `prices`: `Date` plus one column per asset with price or index levels
 - `asset_info`: `Asset`, `Asset Class`, `Region`, `Subgroup`
@@ -11,7 +13,16 @@ Keep the workbook in the same folder as `app.py`. The workbook must contain:
 
 Asset names must match exactly across `prices`, `asset_info` and `expected_returns`.
 
-## 2. Run the app
+## 2. Load data in the app
+
+In the sidebar, choose one of two options:
+
+- **Use included sample data**: runs the built-in `data.xlsx` or `sample_data.xlsx`.
+- **Upload my own Excel file**: lets each user upload their completed template through the browser.
+
+The upload workflow is best for a public Streamlit deployment because each user can run their own data without changing the project files.
+
+## 3. Run the app locally
 
 Windows:
 
@@ -33,7 +44,7 @@ Or run:
 ./run_app.sh
 ```
 
-## 3. Select assumptions
+## 4. Select assumptions
 
 Choose either:
 
@@ -46,7 +57,7 @@ Then select the risk-free rate:
 - Enter manually
 - Use 0%
 
-## 4. Select constraints
+## 5. Select constraints
 
 Choose a constraint preset, then adjust values in the sidebar. If a constraint is not selected, the optimizer ignores it.
 
@@ -61,7 +72,7 @@ Built-in constraints include:
 - Emerging min/max
 - Foreign equity max as a percentage of total equity
 
-## 5. Run optimizations
+## 6. Run optimizations
 
 The app can run:
 
@@ -73,6 +84,6 @@ The app can run:
 - Target Risk
 - Efficient Frontier
 
-## 6. Export results
+## 7. Export results
 
 After optimization, open the `Export` tab and download the polished Excel report. It includes a dashboard, summary tables, weights, group weights, asset summary, efficient frontier data, covariance, correlation, constraint settings and validation messages.

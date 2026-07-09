@@ -4,8 +4,10 @@ A reusable Streamlit dashboard that automates the portfolio optimization workflo
 
 ## Version
 
-Version 1.0 combines the next-stage polish work into one release:
+Version 1.1 adds public sharing support through file upload and template download, while keeping the Version 1.0 dashboard/reporting features:
 
+- Upload user workbook through the Streamlit sidebar
+- Download Excel template directly from the app
 - Better report export
 - Cleaner dashboard charts
 - Save/load constraint presets
@@ -15,7 +17,7 @@ Version 1.0 combines the next-stage polish work into one release:
 
 ## What the app does
 
-- Reads `data.xlsx`
+- Reads the included `data.xlsx` / `sample_data.xlsx` or a user-uploaded `.xlsx` workbook
 - Calculates monthly returns from price/index levels
 - Calculates demeaned returns
 - Builds the monthly population covariance matrix and correlation matrix
@@ -45,7 +47,7 @@ Version 1.0 combines the next-stage polish work into one release:
 
 ## Required Excel structure
 
-The app expects a workbook named `data.xlsx` in the same folder as `app.py`.
+For local use, the app can read `data.xlsx` in the same folder as `app.py`. For shared Streamlit links, users can download the template, fill it in, and upload their own `.xlsx` file through the sidebar.
 
 Required sheets:
 
@@ -82,6 +84,21 @@ Use the `classification_guide` sheet when changing to a new asset universe.
 | `Subgroup` | More specific bucket such as US Equity, Developed, Emerging, Bond, Cash, REIT, Gold, Sector. | Developed / Emerging constraints |
 
 For built-in constraints to work, use these exact labels when relevant: `Equity`, `Fixed Income`, `Cash`, `Foreign`, `Developed`, and `Emerging`.
+
+
+## Sharing the Streamlit app with other users
+
+When deployed, other users should not edit your project `data.xlsx` file. Instead, the app supports this workflow:
+
+1. User opens the Streamlit link.
+2. User clicks **Download Excel template** in the sidebar.
+3. User fills in the `prices`, `asset_info`, and `expected_returns` sheets.
+4. User selects **Upload my own Excel file**.
+5. User uploads the completed workbook.
+6. The app runs optimization for that uploaded data during the current session.
+7. User downloads the polished Excel report.
+
+Uploaded files are processed in memory by the app and are not intentionally saved to the project folder.
 
 ## How to run
 
