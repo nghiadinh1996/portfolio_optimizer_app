@@ -37,6 +37,46 @@ def _format_list(values: Iterable[object], max_items: int = 8) -> str:
     return ", ".join(values[:max_items]) + f", ... and {len(values) - max_items} more"
 
 
+def _drop_blank_asset_rows(df: pd.DataFrame) -> pd.DataFrame:
+    """Drop fully blank rows and blank Asset rows from optional template ranges.
+
+    The Excel template may contain formulas down the Asset column so names can
+    auto-populate from prices. Blank formula rows should not be treated as
+    extra missing assets.
+    """
+    if df.empty or "Asset" not in df.columns:
+        return df
+    cleaned = df.dropna(how="all").copy()
+    asset_text = cleaned["Asset"].astype(str).str.strip()
+    cleaned = cleaned[cleaned["Asset"].notna() & asset_text.ne("") & asset_text.str.lower().ne("nan")]
+    return cleaned.reset_index(drop=True)
+
+
+def _formula_like_assets(df: pd.DataFrame) -> list[str]:
+    if df.empty or "Asset" not in df.columns:
+        return []
+    return df.loc[df["Asset"].astype(str).str.strip().str.startswith("="), "Asset"].astype(str).tolist()
+
+
+def _fill_template_asset_names_by_position(df: pd.DataFrame, assets: list[str]) -> pd.DataFrame:
+    """Fill blank/formula Asset cells by row order from prices headers.
+
+    This lets the app read a freshly generated template even if Excel has not
+    saved cached values for the auto-populated Asset formulas. The user still
+    controls the classification columns.
+    """
+    if df.empty or "Asset" not in df.columns:
+        return df
+    filled = df.copy().reset_index(drop=True)
+    filled["Asset"] = filled["Asset"].astype("object")
+    for pos in range(len(filled)):
+        asset_value = filled.at[pos, "Asset"]
+        asset_text = "" if pd.isna(asset_value) else str(asset_value).strip()
+        if (not asset_text or asset_text.lower() == "nan" or asset_text.startswith("=")) and pos < len(assets):
+            filled.at[pos, "Asset"] = assets[pos]
+    return filled
+
+
 def _missing_value_locations(df: pd.DataFrame, columns: list[str], max_items: int = 8) -> list[str]:
     locations: list[str] = []
     for asset in columns:
@@ -104,6 +144,12 @@ def load_portfolio_workbook(source: str | Path | Any) -> PortfolioInputData:
     asset_info = xl.parse(sheet_name="asset_info")
     expected = xl.parse(sheet_name="expected_returns") if "expected_returns" in xl.sheet_names else pd.DataFrame()
 
+    prices = prices.rename(columns={c: str(c).strip() for c in prices.columns})
+    asset_info = asset_info.rename(columns={c: str(c).strip() for c in asset_info.columns})
+    expected = expected.rename(columns={c: str(c).strip() for c in expected.columns}) if not expected.empty else expected
+    asset_info = asset_info.dropna(how="all").reset_index(drop=True)
+    expected = expected.dropna(how="all").reset_index(drop=True) if not expected.empty else expected
+
     warnings: list[str] = []
 
     if "Date" not in prices.columns:
@@ -127,7 +173,6 @@ def load_portfolio_workbook(source: str | Path | Any) -> PortfolioInputData:
             expected_missing_reason = "expected_returns sheet has missing required columns"
 
     prices = prices.copy()
-    prices = prices.rename(columns={c: str(c).strip() for c in prices.columns})
 
     duplicate_columns = prices.columns[prices.columns.duplicated()].tolist()
     if duplicate_columns:
@@ -176,6 +221,11 @@ def load_portfolio_workbook(source: str | Path | Any) -> PortfolioInputData:
         warnings.append(
             "The date spacing is not consistently monthly. The app will still run, but return and volatility annualization assumes monthly observations."
         )
+
+    asset_info = _fill_template_asset_names_by_position(asset_info, assets)
+    asset_info = _drop_blank_asset_rows(asset_info)
+    expected = _fill_template_asset_names_by_position(expected, assets)
+    expected = _drop_blank_asset_rows(expected)
 
     asset_info = asset_info.copy()
     asset_info["Asset"] = _normalize_asset_names(asset_info["Asset"])

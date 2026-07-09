@@ -4,7 +4,7 @@ A reusable Streamlit dashboard that automates the portfolio optimization workflo
 
 ## Version
 
-Version 1.2 adds optional expected-return handling. If the `expected_returns` sheet is missing, blank, incomplete, or mismatched, the app automatically falls back to historical returns instead of blocking the run.
+Version 1.3 adds optional expected-return handling. If the `expected_returns` sheet is missing, blank, incomplete, or mismatched, the app automatically falls back to historical returns instead of blocking the run.
 
 - Upload user workbook through the Streamlit sidebar
 - Optional `expected_returns` sheet with automatic historical-return fallback
@@ -184,3 +184,13 @@ Start here:
 - `docs/TROUBLESHOOTING.md`
 - `docs/DEPLOYMENT.md`
 - `docs/PROJECT_STATUS.md`
+
+## Version 1.3 template update
+
+The app now includes `portfolio_optimizer_template.xlsx` as the download template. In that workbook:
+
+- `asset_info!A2:A200` auto-populates asset names from the headers in `prices` row 1.
+- `expected_returns!A2:A200` auto-populates the same asset names.
+- Users still need to fill or review `Asset Class`, `Region`, and `Subgroup` manually. Excel cannot infer asset classifications automatically.
+- `expected_returns` remains optional. If it is missing, blank, or mismatched, the app falls back to historical returns.
+- After editing the price headers, save the workbook before uploading so the auto-filled names are stored.

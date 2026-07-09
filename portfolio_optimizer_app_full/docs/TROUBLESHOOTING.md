@@ -65,3 +65,8 @@ For built-in group constraints, use these exact labels when relevant:
 - `Asset Class`: `Equity`, `Fixed Income`, `Cash`
 - `Region`: `Foreign`
 - `Subgroup`: `Developed`, `Emerging`
+
+
+## asset_info shows blank or formula-like asset names
+
+The template uses Excel formulas to populate asset names from the `prices` sheet. Open the workbook in Excel, allow formulas to calculate, save it, and upload again. If formulas still do not calculate, paste the asset names manually into `asset_info` column A.

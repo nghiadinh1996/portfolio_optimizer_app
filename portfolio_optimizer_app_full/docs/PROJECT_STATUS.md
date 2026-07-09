@@ -1,6 +1,6 @@
 # Project Status
 
-## Version 1.2 completed features
+## Version 1.3 completed features
 
 - Standardized `data.xlsx` input workbook
 - Streamlit file upload mode for user-provided `.xlsx` workbooks

@@ -36,6 +36,7 @@ st.set_page_config(page_title="Portfolio Optimizer", layout="wide")
 APP_DIR = Path(__file__).resolve().parent
 DATA_FILE = APP_DIR / "data.xlsx"
 SAMPLE_FILE = APP_DIR / "sample_data.xlsx"
+TEMPLATE_FILE = APP_DIR / "portfolio_optimizer_template.xlsx"
 PRESET_FILE = APP_DIR / "presets.json"
 
 
@@ -157,11 +158,11 @@ def run_optimizer_workflow(
 
 
 st.title("Portfolio Optimizer")
-st.caption("Version 1.2: optional expected returns with automatic historical-return fallback")
+st.caption("Version 1.3: auto-populating Excel template plus optional expected-return fallback")
 
 # Sidebar: data source
 st.sidebar.header("0. Data Source")
-template_path = SAMPLE_FILE if SAMPLE_FILE.exists() else DATA_FILE
+template_path = TEMPLATE_FILE if TEMPLATE_FILE.exists() else (SAMPLE_FILE if SAMPLE_FILE.exists() else DATA_FILE)
 if template_path.exists():
     with open(template_path, "rb") as template_file:
         st.sidebar.download_button(
@@ -169,7 +170,7 @@ if template_path.exists():
             data=template_file,
             file_name="portfolio_optimizer_template.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            help="Download this template, replace the price data and asset classifications, then upload it back into the app.",
+            help="Download this template. Asset names in asset_info and expected_returns auto-populate from prices, but classifications still need to be reviewed.",
         )
 else:
     st.sidebar.warning("No template workbook was found in the app folder.")
@@ -196,12 +197,18 @@ if data_source_choice == "Upload my own Excel file":
                 - `prices`: `Date` plus one column per asset with price/index levels
                 - `asset_info`: `Asset`, `Asset Class`, `Region`, `Subgroup`
 
+                Template behavior:
+                - `asset_info` column A auto-populates from the asset headers in `prices`
+                - `expected_returns` column A also auto-populates from the asset headers in `prices`
+                - You still need to review/fill `Asset Class`, `Region`, and `Subgroup` manually
+
                 Optional sheets:
                 - `expected_returns`: `Asset`, `Expected Annual Return`
                 - `classification_guide`: reference sheet explaining the classification fields
 
                 If `expected_returns` is missing, incomplete, or mismatched, the app automatically uses historical returns.
                 If used, expected returns should be entered as Excel percentages, such as `8.97%`, or as decimals, such as `0.0897`.
+                Save the workbook after editing so Excel stores the updated auto-filled asset names.
                 """
             )
         st.stop()

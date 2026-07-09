@@ -90,3 +90,10 @@ The app can run:
 ## 7. Export results
 
 After optimization, open the `Export` tab and download the polished Excel report. It includes a dashboard, summary tables, weights, group weights, asset summary, efficient frontier data, covariance, correlation, constraint settings and validation messages.
+
+
+## Auto-populating asset names in the template
+
+Use the sidebar button to download `portfolio_optimizer_template.xlsx`. When you change the asset headers in the `prices` sheet, the `Asset` columns in `asset_info` and `expected_returns` update automatically. You still need to fill the classification fields manually.
+
+Save the workbook after editing, then upload it back into the app.
