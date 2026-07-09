@@ -97,3 +97,8 @@ After optimization, open the `Export` tab and download the polished Excel report
 Use the sidebar button to download `portfolio_optimizer_template.xlsx`. When you change the asset headers in the `prices` sheet, the `Asset` columns in `asset_info` and `expected_returns` update automatically. You still need to fill the classification fields manually.
 
 Save the workbook after editing, then upload it back into the app.
+
+
+## Version 1.5 note
+
+The app automatically sorts the `prices` sheet by `Date` from oldest to newest before calculating monthly returns. If an uploaded workbook is newest-to-oldest or unsorted, the app shows a warning and then calculates returns in the correct chronological order.

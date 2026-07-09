@@ -190,6 +190,19 @@ def load_portfolio_workbook(source: str | Path | Any) -> PortfolioInputData:
         bad_rows = (prices.index[prices["Date"].isna()] + 2).tolist()
         raise ValueError(f"The prices sheet contains invalid or missing dates in Excel row(s): {_format_list(bad_rows)}")
 
+    # Always calculate returns oldest-to-newest, regardless of how the user pasted the data.
+    # This prevents reversed Bloomberg/export downloads from producing backward returns.
+    date_order = prices["Date"]
+    if not date_order.is_monotonic_increasing:
+        if date_order.is_monotonic_decreasing:
+            warnings.append(
+                "The prices sheet was sorted newest-to-oldest. The app automatically sorted it oldest-to-newest before calculating returns."
+            )
+        else:
+            warnings.append(
+                "The prices sheet dates were not sorted. The app automatically sorted them oldest-to-newest before calculating returns."
+            )
+
     prices = prices.sort_values("Date").reset_index(drop=True)
     if prices["Date"].duplicated().any():
         duplicated = prices.loc[prices["Date"].duplicated(), "Date"].dt.strftime("%Y-%m-%d").tolist()

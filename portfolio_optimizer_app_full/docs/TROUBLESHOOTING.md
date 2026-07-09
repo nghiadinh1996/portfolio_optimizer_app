@@ -70,3 +70,8 @@ For built-in group constraints, use these exact labels when relevant:
 ## asset_info shows blank or formula-like asset names
 
 The template uses Excel formulas to populate asset names from the `prices` sheet. Open the workbook in Excel, allow formulas to calculate, save it, and upload again. If formulas still do not calculate, paste the asset names manually into `asset_info` column A.
+
+
+## Version 1.5 note
+
+The app automatically sorts the `prices` sheet by `Date` from oldest to newest before calculating monthly returns. If an uploaded workbook is newest-to-oldest or unsorted, the app shows a warning and then calculates returns in the correct chronological order.

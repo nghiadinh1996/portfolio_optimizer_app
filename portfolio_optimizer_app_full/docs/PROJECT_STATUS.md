@@ -1,6 +1,6 @@
 # Project Status
 
-## Version 1.4 completed features
+## Version 1.5 completed features
 
 - Standardized `data.xlsx` input workbook
 - Streamlit file upload mode for user-provided `.xlsx` workbooks
@@ -31,3 +31,8 @@
 - Add transaction cost and turnover constraints
 - Add Black-Litterman expected return support
 - Add factor exposure constraints
+
+
+## Version 1.5 note
+
+The app automatically sorts the `prices` sheet by `Date` from oldest to newest before calculating monthly returns. If an uploaded workbook is newest-to-oldest or unsorted, the app shows a warning and then calculates returns in the correct chronological order.
