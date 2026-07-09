@@ -6,7 +6,7 @@ from typing import Iterable, Any
 
 import pandas as pd
 
-REQUIRED_SHEETS = {"prices", "asset_info", "expected_returns"}
+REQUIRED_SHEETS = {"prices", "asset_info"}
 REQUIRED_ASSET_INFO_COLUMNS = {"Asset", "Asset Class", "Region", "Subgroup"}
 REQUIRED_EXPECTED_RETURN_COLUMNS = {"Asset", "Expected Annual Return"}
 
@@ -18,6 +18,7 @@ class PortfolioInputData:
     prices: pd.DataFrame
     asset_info: pd.DataFrame
     expected_returns: pd.Series
+    expected_returns_available: bool = False
     validation_warnings: list[str] = field(default_factory=list)
 
     @property
@@ -74,7 +75,7 @@ def load_portfolio_workbook(source: str | Path | Any) -> PortfolioInputData:
     Expected workbook structure:
       - prices: Date column + one column per asset with price/index levels
       - asset_info: Asset, Asset Class, Region, Subgroup
-      - expected_returns: Asset, Expected Annual Return
+      - expected_returns: Asset, Expected Annual Return (optional)
     """
     workbook_name = getattr(source, "name", None) or str(source)
     if isinstance(source, (str, Path)):
@@ -96,12 +97,12 @@ def load_portfolio_workbook(source: str | Path | Any) -> PortfolioInputData:
     if missing_sheets:
         raise ValueError(
             f"Missing required sheet(s): {sorted(missing_sheets)}. "
-            "The workbook must include prices, asset_info, and expected_returns."
+            "The workbook must include prices and asset_info. expected_returns is optional."
         )
 
     prices = xl.parse(sheet_name="prices")
     asset_info = xl.parse(sheet_name="asset_info")
-    expected = xl.parse(sheet_name="expected_returns")
+    expected = xl.parse(sheet_name="expected_returns") if "expected_returns" in xl.sheet_names else pd.DataFrame()
 
     warnings: list[str] = []
 
@@ -114,11 +115,16 @@ def load_portfolio_workbook(source: str | Path | Any) -> PortfolioInputData:
             f"asset_info is missing required column(s): {sorted(missing_asset_info_cols)}"
         )
 
-    missing_expected_cols = REQUIRED_EXPECTED_RETURN_COLUMNS - set(expected.columns)
-    if missing_expected_cols:
-        raise ValueError(
-            f"expected_returns is missing required column(s): {sorted(missing_expected_cols)}"
-        )
+    expected_returns_available = False
+    expected_missing_reason = "expected_returns sheet was not found" if expected.empty else ""
+    if not expected.empty:
+        missing_expected_cols = REQUIRED_EXPECTED_RETURN_COLUMNS - set(expected.columns)
+        if missing_expected_cols:
+            warnings.append(
+                f"expected_returns was ignored because it is missing column(s): {sorted(missing_expected_cols)}. Historical returns will be used instead if manual expected returns are selected."
+            )
+            expected = pd.DataFrame()
+            expected_missing_reason = "expected_returns sheet has missing required columns"
 
     prices = prices.copy()
     prices = prices.rename(columns={c: str(c).strip() for c in prices.columns})
@@ -186,40 +192,72 @@ def load_portfolio_workbook(source: str | Path | Any) -> PortfolioInputData:
             raise ValueError(f"asset_info column '{col}' has missing value(s) for: {_format_list(bad)}")
         asset_info[col] = asset_info[col].astype(str).str.strip()
 
-    expected = expected.copy()
-    expected["Asset"] = _normalize_asset_names(expected["Asset"])
-    if expected["Asset"].duplicated().any():
-        duplicated_expected = expected.loc[expected["Asset"].duplicated(), "Asset"].tolist()
-        warnings.append(
-            f"expected_returns has duplicate asset row(s). The first row was kept for: {_format_list(duplicated_expected)}"
-        )
-    expected = expected.drop_duplicates(subset=["Asset"], keep="first")
-    expected["Expected Annual Return"] = pd.to_numeric(
-        expected["Expected Annual Return"], errors="coerce"
-    )
-
     asset_set = set(assets)
     info_set = set(asset_info["Asset"])
-    expected_set = set(expected["Asset"])
 
     missing_info = asset_set - info_set
-    missing_expected = asset_set - expected_set
     extra_info = info_set - asset_set
-    extra_expected = expected_set - asset_set
 
     if missing_info:
         raise ValueError(f"asset_info is missing asset(s): {_format_list(sorted(missing_info))}")
-    if missing_expected:
-        raise ValueError(f"expected_returns is missing asset(s): {_format_list(sorted(missing_expected))}")
     if extra_info:
         raise ValueError(f"asset_info contains asset(s) not in prices: {_format_list(sorted(extra_info))}")
-    if extra_expected:
-        raise ValueError(f"expected_returns contains asset(s) not in prices: {_format_list(sorted(extra_expected))}")
-    if expected["Expected Annual Return"].isna().any():
-        bad_assets = expected.loc[expected["Expected Annual Return"].isna(), "Asset"].tolist()
-        raise ValueError(f"Expected returns are missing or non-numeric for: {_format_list(bad_assets)}")
 
-    _validate_expected_return_scale(expected)
+    # expected_returns is optional. If it is missing, incomplete, mismatched, or blank,
+    # the app will fall back to historical returns instead of blocking the workbook.
+    if expected.empty:
+        expected_returns = pd.Series(index=assets, dtype=float, name="Expected Annual Return")
+        if expected_missing_reason:
+            warnings.append(
+                f"Manual expected returns are unavailable because {expected_missing_reason}. Historical returns will be used instead if needed."
+            )
+    else:
+        expected = expected.copy()
+        expected["Asset"] = _normalize_asset_names(expected["Asset"])
+        if expected["Asset"].duplicated().any():
+            duplicated_expected = expected.loc[expected["Asset"].duplicated(), "Asset"].tolist()
+            warnings.append(
+                f"expected_returns has duplicate asset row(s). The first row was kept for: {_format_list(duplicated_expected)}"
+            )
+        expected = expected.drop_duplicates(subset=["Asset"], keep="first")
+        expected["Expected Annual Return"] = pd.to_numeric(
+            expected["Expected Annual Return"], errors="coerce"
+        )
+
+        expected_set = set(expected["Asset"])
+        missing_expected = asset_set - expected_set
+        extra_expected = expected_set - asset_set
+        missing_values = expected.loc[
+            expected["Asset"].isin(asset_set) & expected["Expected Annual Return"].isna(), "Asset"
+        ].tolist()
+        suspicious = expected.loc[
+            expected["Asset"].isin(asset_set) & expected["Expected Annual Return"].abs().gt(1.0), ["Asset", "Expected Annual Return"]
+        ]
+
+        if missing_expected or extra_expected or missing_values or not suspicious.empty:
+            reasons = []
+            if missing_expected:
+                reasons.append(f"missing asset(s): {_format_list(sorted(missing_expected))}")
+            if extra_expected:
+                reasons.append(f"extra asset(s) not in prices: {_format_list(sorted(extra_expected))}")
+            if missing_values:
+                reasons.append(f"blank/non-numeric return(s): {_format_list(missing_values)}")
+            if not suspicious.empty:
+                examples = [f"{row['Asset']}={row['Expected Annual Return']}" for _, row in suspicious.iterrows()]
+                reasons.append(
+                    "return value(s) look like percentages entered as whole numbers, such as "
+                    f"{_format_list(examples)}"
+                )
+            warnings.append(
+                "Manual expected returns are unavailable because expected_returns is incomplete or mismatched ("
+                + "; ".join(reasons)
+                + "). Historical returns will be used instead if manual expected returns are selected."
+            )
+            expected_returns = pd.Series(index=assets, dtype=float, name="Expected Annual Return")
+        else:
+            expected_returns = expected.set_index("Asset").loc[assets, "Expected Annual Return"]
+            expected_returns.name = "Expected Annual Return"
+            expected_returns_available = True
 
     asset_classes = set(asset_info["Asset Class"].str.lower())
     if "equity" not in asset_classes:
@@ -229,14 +267,13 @@ def load_portfolio_workbook(source: str | Path | Any) -> PortfolioInputData:
     if "cash" not in asset_classes:
         warnings.append("No assets are classified as Asset Class = Cash. Cash constraints will be infeasible if activated.")
 
-    # Align metadata and expected return series to the exact order of price columns.
+    # Align metadata to the exact order of price columns.
     asset_info = asset_info.set_index("Asset").loc[assets].reset_index()
-    expected_returns = expected.set_index("Asset").loc[assets, "Expected Annual Return"]
-    expected_returns.name = "Expected Annual Return"
 
     return PortfolioInputData(
         prices=prices[["Date", *assets]],
         asset_info=asset_info,
         expected_returns=expected_returns,
+        expected_returns_available=expected_returns_available,
         validation_warnings=warnings,
     )

@@ -160,8 +160,8 @@ def _write_dashboard(writer, portfolio_summary: pd.DataFrame, weights: pd.DataFr
     worksheet.write("G4", "Quick Notes", section_fmt)
     notes = [
         "Use data.xlsx to change the asset universe.",
-        "Asset names must match across prices, asset_info and expected_returns.",
-        "Expected returns must be decimals or Excel percentages.",
+        "Asset names must match between prices and asset_info. expected_returns is optional.",
+        "If expected_returns is missing or mismatched, historical returns are used.",
         "Equal Weight is a base comparison and may violate selected constraints.",
     ]
     for i, note in enumerate(notes, start=5):

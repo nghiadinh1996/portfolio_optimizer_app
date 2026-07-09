@@ -157,7 +157,7 @@ def run_optimizer_workflow(
 
 
 st.title("Portfolio Optimizer")
-st.caption("Version 1.1: file upload mode, template download, polished dashboard, report export and constraint presets")
+st.caption("Version 1.2: optional expected returns with automatic historical-return fallback")
 
 # Sidebar: data source
 st.sidebar.header("0. Data Source")
@@ -185,7 +185,7 @@ if data_source_choice == "Upload my own Excel file":
     uploaded_file = st.sidebar.file_uploader(
         "Upload completed Excel workbook",
         type=["xlsx"],
-        help="The workbook must include prices, asset_info and expected_returns sheets.",
+        help="The workbook must include prices and asset_info. expected_returns is optional.",
     )
     if uploaded_file is None:
         st.info("Download the Excel template from the sidebar, fill it in, then upload the completed .xlsx file to run your own data.")
@@ -195,11 +195,13 @@ if data_source_choice == "Upload my own Excel file":
                 Required sheets:
                 - `prices`: `Date` plus one column per asset with price/index levels
                 - `asset_info`: `Asset`, `Asset Class`, `Region`, `Subgroup`
-                - `expected_returns`: `Asset`, `Expected Annual Return`
-                - `classification_guide`: optional reference sheet explaining the classification fields
 
-                Asset names must match exactly across `prices`, `asset_info`, and `expected_returns`.
-                Expected returns should be entered as Excel percentages, such as `8.97%`, or as decimals, such as `0.0897`.
+                Optional sheets:
+                - `expected_returns`: `Asset`, `Expected Annual Return`
+                - `classification_guide`: reference sheet explaining the classification fields
+
+                If `expected_returns` is missing, incomplete, or mismatched, the app automatically uses historical returns.
+                If used, expected returns should be entered as Excel percentages, such as `8.97%`, or as decimals, such as `0.0897`.
                 """
             )
         st.stop()
@@ -220,11 +222,13 @@ except Exception as exc:
             Required sheets:
             - `prices`: `Date` plus one column per asset with price/index levels
             - `asset_info`: `Asset`, `Asset Class`, `Region`, `Subgroup`
-            - `expected_returns`: `Asset`, `Expected Annual Return`
-            - `classification_guide`: optional reference sheet explaining the classification fields
 
-            Asset names must match exactly across `prices`, `asset_info`, and `expected_returns`.
-            Expected returns should be entered as Excel percentages, such as `8.97%`, or as decimals, such as `0.0897`.
+            Optional sheets:
+            - `expected_returns`: `Asset`, `Expected Annual Return`
+            - `classification_guide`: reference sheet explaining the classification fields
+
+            If `expected_returns` is missing, incomplete, or mismatched, the app automatically uses historical returns.
+            If used, expected returns should be entered as Excel percentages, such as `8.97%`, or as decimals, such as `0.0897`.
             Do not enter `8.97`, because Python reads that as 897%.
             """
         )
@@ -232,8 +236,15 @@ except Exception as exc:
 
 # Sidebar: return assumption method
 st.sidebar.header("1. Assumptions")
-return_method_label = st.sidebar.radio("Return assumption method", ["Manual expected returns", "Historical returns"], index=0)
+manual_available = bool(getattr(data, "expected_returns_available", False))
+default_return_index = 0 if manual_available else 1
+return_method_label = st.sidebar.radio("Return assumption method", ["Manual expected returns", "Historical returns"], index=default_return_index)
 return_method = "manual_expected" if return_method_label == "Manual expected returns" else "historical"
+
+if return_method == "manual_expected" and not manual_available:
+    st.sidebar.warning("Manual expected returns are unavailable for this workbook. Using historical returns instead.")
+    return_method = "historical"
+    return_method_label = "Historical returns (auto fallback)"
 
 try:
     model = build_risk_return_model(
@@ -359,6 +370,7 @@ with assumptions_tab:
     with a1:
         st.markdown("**Selected Method**")
         st.write(f"Return assumption: `{return_method_label}`")
+        st.write(f"Manual expected returns available: `{manual_available}`")
         st.write(f"Risk-free rate: `{risk_free_rate:.2%}`")
         st.write(f"Preset source: `{preset_name}`")
     with a2:

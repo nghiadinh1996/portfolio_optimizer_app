@@ -4,9 +4,10 @@ A reusable Streamlit dashboard that automates the portfolio optimization workflo
 
 ## Version
 
-Version 1.1 adds public sharing support through file upload and template download, while keeping the Version 1.0 dashboard/reporting features:
+Version 1.2 adds optional expected-return handling. If the `expected_returns` sheet is missing, blank, incomplete, or mismatched, the app automatically falls back to historical returns instead of blocking the run.
 
 - Upload user workbook through the Streamlit sidebar
+- Optional `expected_returns` sheet with automatic historical-return fallback
 - Download Excel template directly from the app
 - Better report export
 - Cleaner dashboard charts
@@ -21,7 +22,7 @@ Version 1.1 adds public sharing support through file upload and template downloa
 - Calculates monthly returns from price/index levels
 - Calculates demeaned returns
 - Builds the monthly population covariance matrix and correlation matrix
-- Supports manual expected returns or historical returns
+- Supports manual expected returns or historical returns, with automatic fallback to historical returns
 - Uses standard Sharpe ratio: `(portfolio return - risk-free rate) / portfolio volatility`
 - Supports flexible optional constraints
 - Runs:
@@ -61,16 +62,18 @@ Required sheets:
    - `Region`
    - `Subgroup`
 
+Optional sheets:
+
 3. `expected_returns`
    - `Asset`
    - `Expected Annual Return`
 
 4. `classification_guide`
-   - Optional reference sheet explaining how to classify assets
+   - Reference sheet explaining how to classify assets
 
-Asset names must match exactly across `prices`, `asset_info`, and `expected_returns`.
+Asset names must match exactly between `prices` and `asset_info`. If you use `expected_returns`, asset names in that sheet should also match exactly.
 
-Expected returns should be entered as Excel percentages, such as `8.97%`, or decimals, such as `0.0897`. Do not enter `8.97`, because that means 897% to Python.
+If the `expected_returns` sheet is missing, blank, incomplete, or mismatched, the app will automatically use historical returns. If expected returns are provided, enter them as Excel percentages, such as `8.97%`, or decimals, such as `0.0897`. Do not enter `8.97`, because that means 897% to Python.
 
 ## Asset classification guide
 
@@ -78,7 +81,7 @@ Use the `classification_guide` sheet when changing to a new asset universe.
 
 | Column | What it means | Built-in constraint trigger |
 |---|---|---|
-| `Asset` | Asset name. Must match `prices` and `expected_returns`. | Exact asset match |
+| `Asset` | Asset name. Must match `prices`. If using manual expected returns, it should also match `expected_returns`. | Exact asset match |
 | `Asset Class` | Broad bucket such as Equity, Fixed Income, Cash, Alternative, Commodity, Real Estate, Currency, Other. | Equity / Fixed Income / Cash constraints |
 | `Region` | Geographic exposure such as Domestic, Foreign, Global, Developed Ex-US, Emerging Market. | Foreign equity constraint uses `Region = Foreign` |
 | `Subgroup` | More specific bucket such as US Equity, Developed, Emerging, Bond, Cash, REIT, Gold, Sector. | Developed / Emerging constraints |
@@ -92,7 +95,7 @@ When deployed, other users should not edit your project `data.xlsx` file. Instea
 
 1. User opens the Streamlit link.
 2. User clicks **Download Excel template** in the sidebar.
-3. User fills in the `prices`, `asset_info`, and `expected_returns` sheets.
+3. User fills in the `prices` and `asset_info` sheets. `expected_returns` is optional.
 4. User selects **Upload my own Excel file**.
 5. User uploads the completed workbook.
 6. The app runs optimization for that uploaded data during the current session.

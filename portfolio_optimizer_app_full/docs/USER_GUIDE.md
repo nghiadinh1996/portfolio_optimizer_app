@@ -8,10 +8,13 @@ The workbook must contain:
 
 - `prices`: `Date` plus one column per asset with price or index levels
 - `asset_info`: `Asset`, `Asset Class`, `Region`, `Subgroup`
-- `expected_returns`: `Asset`, `Expected Annual Return`
-- `classification_guide`: optional reference sheet that explains how to classify assets
 
-Asset names must match exactly across `prices`, `asset_info` and `expected_returns`.
+Optional sheets:
+
+- `expected_returns`: `Asset`, `Expected Annual Return`
+- `classification_guide`: reference sheet that explains how to classify assets
+
+Asset names must match exactly between `prices` and `asset_info`. If you use manual expected returns, asset names in `expected_returns` should also match exactly. If the expected return sheet is missing, blank, incomplete, or mismatched, the app automatically uses historical returns.
 
 ## 2. Load data in the app
 
@@ -48,8 +51,8 @@ Or run:
 
 Choose either:
 
-- Manual expected returns: uses the `expected_returns` sheet
-- Historical returns: calculates annualized expected returns from the price history
+- Manual expected returns: uses the `expected_returns` sheet when it is complete and matched
+- Historical returns: calculates annualized expected returns from the price history. This is also the automatic fallback when manual expected returns are unavailable
 
 Then select the risk-free rate:
 

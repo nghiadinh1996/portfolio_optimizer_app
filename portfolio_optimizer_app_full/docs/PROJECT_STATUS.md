@@ -1,6 +1,6 @@
 # Project Status
 
-## Version 1.1 completed features
+## Version 1.2 completed features
 
 - Standardized `data.xlsx` input workbook
 - Streamlit file upload mode for user-provided `.xlsx` workbooks
@@ -9,7 +9,7 @@
 - Price/index level input with automatic monthly return calculation
 - Demeaned return calculation
 - Population covariance matrix to match the original Excel workbook logic
-- Manual expected return or historical return assumption selection
+- Manual expected return or historical return assumption selection, with automatic historical fallback
 - Standard Sharpe ratio using an annual risk-free rate
 - Flexible optional constraints
 - Equal Weight, Max Return, Min Volatility, Max Sharpe, Target Return and Target Risk portfolios

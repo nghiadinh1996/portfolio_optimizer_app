@@ -26,14 +26,20 @@ py -m streamlit run app.py
 If you are using the included sample data, check that:
 
 - `data.xlsx` or `sample_data.xlsx` is in the same folder as `app.py`
-- It has the required sheets: `prices`, `asset_info`, `expected_returns`
+- It has the required sheets: `prices`, `asset_info`
 
 If you are uploading your own file, check that:
 
 - The file is an `.xlsx` workbook
 - It was not left open and locked by Excel during upload
-- It has the required sheets: `prices`, `asset_info`, `expected_returns`
-- Asset names match exactly across `prices`, `asset_info`, and `expected_returns`
+- It has the required sheets: `prices`, `asset_info`
+- Asset names match exactly between `prices` and `asset_info`. The `expected_returns` sheet is optional
+
+## Expected returns are missing or too high
+
+The `expected_returns` sheet is optional. If it is missing, blank, incomplete, or mismatched, the app will use historical returns automatically.
+
+If you want to use manual expected returns, make sure every asset is listed and the names match `prices` exactly.
 
 ## Expected returns are too high
 

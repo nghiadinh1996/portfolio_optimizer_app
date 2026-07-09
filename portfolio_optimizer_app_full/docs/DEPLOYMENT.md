@@ -44,7 +44,7 @@ After deployment, users can use the app without GitHub access:
 
 1. Open the Streamlit app link.
 2. Click **Download Excel template** in the sidebar.
-3. Fill in price/index data, asset classifications and expected returns.
+3. Fill in price/index data and asset classifications. Expected returns are optional.
 4. Select **Upload my own Excel file**.
 5. Upload the completed `.xlsx` workbook.
 6. Run optimization and download the output report.
