@@ -4,7 +4,7 @@ A reusable Streamlit dashboard that automates the portfolio optimization workflo
 
 ## Version
 
-Version 1.3 adds optional expected-return handling. If the `expected_returns` sheet is missing, blank, incomplete, or mismatched, the app automatically falls back to historical returns instead of blocking the run.
+Version 1.4 improves the Excel template and ignores blank/placeholder asset rows. Version 1.3 added optional expected-return handling. If the `expected_returns` sheet is missing, blank, incomplete, or mismatched, the app automatically falls back to historical returns instead of blocking the run.
 
 - Upload user workbook through the Streamlit sidebar
 - Optional `expected_returns` sheet with automatic historical-return fallback
@@ -185,7 +185,7 @@ Start here:
 - `docs/DEPLOYMENT.md`
 - `docs/PROJECT_STATUS.md`
 
-## Version 1.3 template update
+## Version 1.4 template update
 
 The app now includes `portfolio_optimizer_template.xlsx` as the download template. In that workbook:
 

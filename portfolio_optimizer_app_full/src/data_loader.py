@@ -41,14 +41,21 @@ def _drop_blank_asset_rows(df: pd.DataFrame) -> pd.DataFrame:
     """Drop fully blank rows and blank Asset rows from optional template ranges.
 
     The Excel template may contain formulas down the Asset column so names can
-    auto-populate from prices. Blank formula rows should not be treated as
+    auto-populate from prices. Blank formula rows and placeholder values such as 0 should not be treated as
     extra missing assets.
     """
     if df.empty or "Asset" not in df.columns:
         return df
     cleaned = df.dropna(how="all").copy()
     asset_text = cleaned["Asset"].astype(str).str.strip()
-    cleaned = cleaned[cleaned["Asset"].notna() & asset_text.ne("") & asset_text.str.lower().ne("nan")]
+    asset_text_lower = asset_text.str.lower()
+    placeholder_mask = (
+        cleaned["Asset"].isna()
+        | asset_text.eq("")
+        | asset_text_lower.isin({"nan", "none", "null"})
+        | asset_text.isin({"0", "0.0"})
+    )
+    cleaned = cleaned[~placeholder_mask]
     return cleaned.reset_index(drop=True)
 
 
@@ -72,7 +79,7 @@ def _fill_template_asset_names_by_position(df: pd.DataFrame, assets: list[str]) 
     for pos in range(len(filled)):
         asset_value = filled.at[pos, "Asset"]
         asset_text = "" if pd.isna(asset_value) else str(asset_value).strip()
-        if (not asset_text or asset_text.lower() == "nan" or asset_text.startswith("=")) and pos < len(assets):
+        if (not asset_text or asset_text.lower() in {"nan", "none", "null"} or asset_text in {"0", "0.0"} or asset_text.startswith("=")) and pos < len(assets):
             filled.at[pos, "Asset"] = assets[pos]
     return filled
 

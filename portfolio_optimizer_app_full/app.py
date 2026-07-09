@@ -158,7 +158,7 @@ def run_optimizer_workflow(
 
 
 st.title("Portfolio Optimizer")
-st.caption("Version 1.3: auto-populating Excel template plus optional expected-return fallback")
+st.caption("Version 1.4: improved template asset auto-fill and placeholder row handling")
 
 # Sidebar: data source
 st.sidebar.header("0. Data Source")
